@@ -1,11 +1,11 @@
 
-Multi-Region CockroachDB Dedicated Logs in CloudWatch: 
-    A "how to guide" on setting up log shipping from a CockroachDB Dedicated Multi-Region Cluster to AWS CloudWatch Logs
+# Multi-Region CockroachDB Dedicated Logs in CloudWatch: 
+##  A "how to guide" on setting up log shipping from a CockroachDB Dedicated Multi-Region Cluster to AWS CloudWatch Logs
 
 # Introduction
-An enterprise level organization with strict security protocols may want their logs from a CockroachDB Dedicated cluster, hosted in AWS, to be available in CloudWatch for Security and Information Management (SIEM).  Or there may be a need to proactively monitor logs for errors or events that need to be addressed by the organization.  Whatever the reason, logs from a CockroachDB Dedicated cluster can now be made available in AWS CloudWatch.  Logs are also avialable in Cloud Logging for GCP Hosted Dedicated Clusters.  
+An enterprise level organization with strict security protocols may want their logs from a CockroachDB Dedicated cluster, hosted in AWS, to be available in CloudWatch for Security and Information Management (SIEM).  Or there may be a need to proactively monitor logs for errors or events that need to be addressed by the organization.  Whatever the reason, logs from a CockroachDB Dedicated cluster can be made available in AWS CloudWatch.  Logs are also avialable in Cloud Logging for GCP Hosted Dedicated Clusters.  
 
-This "How-To" is intended to help you get your logs from a multi-region cluster into AWS CloudWatch.    The [Cockroach Labs Documentation](https://www.cockroachlabs.com/docs/cockroachcloud/export-logs.html) does a great job of explaining how to perform this function for a single-region cluster.   This is for those folks setting log shipping for a multi-region cluster.  
+This "How-To" is intended to help you get your logs from a multi-region CockroachDB Dedicated cluster into AWS CloudWatch.    The [Cockroach Labs Documentation](https://www.cockroachlabs.com/docs/cockroachcloud/export-logs.html) does a great job of explaining how to perform this function for a single-region cluster.   This is for those folks setting log shipping for a multi-region cluster.  
 
 We'll assume you already have a CockroachDB Dedicated cluster, a database user, and a terminal session with access to the cluster.
 
@@ -21,11 +21,11 @@ To enable CloudWatch Logging, we're going to need to gather the following list o
 - The name of your CloudWatch Log Groups
 - The ARN(s) of your CloudWatch Log Groups (which we will create below).  You should have one ARN for each log group created (in our example, we'll have 3 ARNs).
 - Your Cockroach Organization ID (From the Cockroach Cloud UI Settings Page)
+- The Secret Key of your service account (from the Cockroach Cloud UI Access Page) in order to access the API.
 - AWS Account Id of your dedicated cluster (from an API call)
 - Cluster Id of your dedicated cluster (from an API call)
 - The ARN of your AWS IAM Policy 
 - The ARN of your AWS IAM Role 
-- The Secret Key of your service account (from the Cockroach Cloud UI Access Page) in order to access the API.
 
 # Step 1 - Create the AWS CloudWatch log group in each region
 **In each region** of your CockroachDB Cluster, create a log group in AWS CloudWatch.  *Be sure to name the log group exactly the same in each region.*  Save the name of the log group, we'll need that in step 7.  To keep things easy to manage, I include the cluster name "nollen-cloudwatch-cluster" in the log group name.  In my case, my multi-region cluster is in us-east-1, us-east-2 and us-west-2 so I'll create 3 log groups, one in each of those regions.  
@@ -127,7 +127,7 @@ In AWS IAM, create a new role.  The key elements are:
 
 ![Create Account Role Step 1](Resources/AWS-IAM-Create-Role.JPG)
 </br></br>
-In permissions add the policy we created in step 5
+In permissions add the policy we created in step 5 </br></br>
 ![Add IAM Policy to IAM Role](Resources/AWS-IAM-Create-Role-Add-Policy.JPG)
 
 </br></br>
