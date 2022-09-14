@@ -1,6 +1,6 @@
 
 Multi-Region CockroachDB Dedicated Logs in CloudWatch: 
-    A How-To Guide
+    A "how to guide" on setting up log shipping from a CockroachDB Dedicated Multi-Region Cluster to AWS CloudWatch Logs
 
 # Introduction
 An enterprise level organization with strict security protocols may want their logs from a CockroachDB Dedicated cluster, hosted in AWS, to be available in CloudWatch for Security and Information Management (SIEM).  Or there may be a need to proactively monitor logs for errors or events that need to be addressed by the organization.  Whatever the reason, logs from a CockroachDB Dedicated cluster can now be made available in AWS CloudWatch.  Logs are also avialable in Cloud Logging for GCP Hosted Dedicated Clusters.  
@@ -71,13 +71,12 @@ The API will list all of the Clusters in your organization.  Find the cluster na
       "cockroach_version": "v22.1.6",
       "plan": "DEDICATED",
       "cloud_provider": "AWS",
-      "account_id": "033705269228",
+      "account_id": "123456789012",
       "state": "CREATED",
-      "creator_id": "bd445dd7-8ac1-4d75-82b9-6e062d3f1cf4",
       ...
     }
 ```
-In this example, the Cluster Id (id) is `14835272-8c3b-4b7a-ad3a-d4de878f4e34` and the AWS Account Id (account_id) is `033705269228`.  You'll need both of these in the next steps, so keep track of them.
+In this example, the Cluster Id (id) is `14835272-8c3b-4b7a-ad3a-d4de878f4e34` and the AWS Account Id (account_id) is `123456789012`.  You'll need both of these in the next steps, so keep track of them.
 
 # Step 4 - Find Your Cockroach Organization ID
 From the Cockroach Cloud UI, from the "Settings" tab on the left hand column, you'll find the Organizaiton ID; it should be 36 numbers including 4 dashes.  
@@ -88,7 +87,7 @@ Earlier, when we created the Log groups in CloudWatch, we were presented with Cl
 
 In AWS IAM, choose "Policy" from the left hand tabs and "Create Policy".
 
-Copy the JSON below and paste it into the "Create Policy" section in the "JSON" tab.  Replace the 3 ARNs in the example below with the ARN(s) of your CloudWatch Log Groups (we created those in step 1).
+Copy the JSON below and paste it into the "Create Policy" section in the "JSON" tab.  Replace the 3 ARNs of the Resource seciont in the example below with the ARN(s) of your CloudWatch Log Groups (we created those in step 1).
 
 ```
 {
@@ -105,9 +104,9 @@ Copy the JSON below and paste it into the "Create Policy" section in the "JSON" 
             ],
             "Effect": "Allow",
             "Resource": [
-                "arn:aws:logs:us-west-2:541263489771:log-group:/cockroachdb/nollen-cloudwatch-cluster/logs:*",
-                "arn:aws:logs:us-east-1:541263489771:log-group:/cockroachdb/nollen-cloudwatch-cluster/logs:*",
-                "arn:aws:logs:us-east-2:541263489771:log-group:/cockroachdb/nollen-cloudwatch-cluster/logs:*"
+                "arn:aws:logs:us-west-2:123456789012:log-group:/cockroachdb/nollen-cloudwatch-cluster/logs:*",
+                "arn:aws:logs:us-east-1:123456789012:log-group:/cockroachdb/nollen-cloudwatch-cluster/logs:*",
+                "arn:aws:logs:us-east-2:123456789012:log-group:/cockroachdb/nollen-cloudwatch-cluster/logs:*"
             ]
         }
     ]
@@ -124,7 +123,7 @@ In this step, we're going to create an AWS IAM Role that will be used by Cockroa
 In AWS IAM, create a new role.  The key elements are:
 - The "Trusted entity type" is "AWS account"
 - The "Account ID" to supply is the AWS Account ID from step 3 (This is the "account_id")
-- If you wish to include an "External ID" for more security, you can add the Cockroach Organization ID from step 4. </br></br>
+ </br></br>
 
 ![Create Account Role Step 1](Resources/AWS-IAM-Create-Role.JPG)
 </br></br>
@@ -155,13 +154,13 @@ curl --request POST \
 The response I received:
 ```
 {
-  "cluster_id": "14835272-8c3b-4b7a-ad3a-d4de878f4e34",
+  "cluster_id": "{my cluster ID}",
   "status": "ENABLING",
   "user_message": "",
   "spec": {
     "type": "AWS_CLOUDWATCH",
     "log_name": "/cockroachdb/nollen-cloudwatch-cluster/logs",
-    "auth_principal": "arn:aws:iam::541263489771:role/nollen-log-export-role"
+    "auth_principal": "arn:aws:iam::{my account ID}:role/nollen-log-export-role"
   },
   "created_at": "2022-09-13T19:08:21.063388Z",
   "updated_at": "2022-09-13T19:08:21.063388Z"
@@ -178,13 +177,13 @@ curl --request GET \
 When the process is complete the response will look like this:
 ```
 {
-  "cluster_id": "14835272-8c3b-4b7a-ad3a-d4de878f4e34",
+  "cluster_id": "{my cluster ID}",
   "status": "ENABLED",
   "user_message": "",
   "spec": {
     "type": "AWS_CLOUDWATCH",
     "log_name": "/cockroachdb/nollen-cloudwatch-cluster/logs",
-    "auth_principal": "arn:aws:iam::541263489771:role/nollen-log-export-role"
+    "auth_principal": "arn:aws:iam::{my account ID}:role/nollen-log-export-role"
   },
   "created_at": "2022-09-13T19:08:21.063388Z",
   "updated_at": "2022-09-13T19:42:38.924969Z"
@@ -197,6 +196,14 @@ And in CloudWatch Logs you'll be able to operate on the logs in each region:
 ![CloudWatch Log Shipping Complete](Resources/cloud-watch-log-shipping-complete.JPG)
 
 
+# Disable Log Shipping
+If you need to disable log shipping once it has been enabled, use the API:
+
+```
+  curl --request DELETE \
+  --url https://cockroachlabs.cloud/api/v1/clusters/{Cluster ID}/logexport \
+  --header "Authorization: Bearer {Secret Key}"
+```
 
 
 -------------------------------------------------------------
@@ -216,7 +223,7 @@ curl --request GET \
 curl --request POST \
   --url https://cockroachlabs.cloud/api/v1/clusters/14835272-8c3b-4b7a-ad3a-d4de878f4e34/logexport \
   --header "Authorization: Bearer CCDB1_AIYybfcRQhkFsmaHkOQoj2_Png19xaVlLqedBMZdWmIj1RMzwbbQ8sgWLmSgI4W" \
-  --data '{"type": "AWS_CLOUDWATCH", "log_name": "/cockroachdb/nollen-cloudwatch-cluster/logs", "auth_principal": "arn:aws:iam::541263489771:role/nollen-log-export-role"}'
+  --data '{"type": "AWS_CLOUDWATCH", "log_name": "/cockroachdb/nollen-cloudwatch-cluster/logs", "auth_principal": "arn:aws:iam::{my account id}:role/nollen-log-export-role"}'
 
 
 
@@ -243,10 +250,10 @@ curl --request GET \
 ```
 Cloudwatch Log Group
 /cockroachdb/nollen-cloudwatch-cluster/logs
-arn:aws:logs:us-west-2:541263489771:log-group:/cockroachdb/nollen-cloudwatch-cluster/logs:*
+arn:aws:logs:us-west-2:{my account id}:log-group:/cockroachdb/nollen-cloudwatch-cluster/logs:*
 
 Role ARN
-arn:aws:iam::541263489771:role/nollen-log-export-role
+arn:aws:iam::{my account id}:role/nollen-log-export-role
 
 Organization Id
 1d4d68ed-a173-461e-a522-4fbca2b062e1
@@ -275,6 +282,6 @@ curl --request GET \
       "cockroach_version": "v22.1.6",
       "plan": "DEDICATED",
       "cloud_provider": "AWS",
-      "account_id": "033705269228",
+      "account_id": "123456789012",
       "state": "CREATED",
       "creator_id": "bd445dd7-8ac1-4d75-82b9-6e062d3f1cf4",
